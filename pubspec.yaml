@@ -1,0 +1,54 @@
+name: AdoptMate
+description: A new Flutter project.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 0.0.1+1
+
+environment:
+  sdk: '>=2.19.4 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_card_swiper: ^7.0.0
+  palette_generator: ^0.3.3+3
+  fluttertoast: ^8.2.4
+  swipe_cards: ^2.0.0+1
+  card_swiper: ^3.0.1
+  http: ^0.13.6
+  flutter_swipable:
+  image_picker: ^0.8.4+4
+  image: ^3.0.1
+  shared_preferences: ^2.0.6
+
+  english_words: ^4.0.0
+  provider: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/pug.jpeg
+    - assets/images/pugsito.jpeg
+    - assets/images/pugsi.jpg
+    - assets/images/aga.jpg
+    - assets/images/aga2.jpg
+    - assets/images/aga3.jpg
+    - assets/images/gato1.jpg
+    - assets/images/gato2.jpeg
+    - assets/images/gato3.jpg
+    - assets/images/Logo1.png
+    - assets/images/Logo2.png
+    - assets/images/rot.jpg
+    - assets/images/rot1.jpg
+    - assets/images/rot3.jpg
+    - assets/images/yeti.jpg
+    - assets/images/yet1.jpg
+    - assets/images/yeti2.jpg
