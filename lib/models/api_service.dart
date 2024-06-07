@@ -12,7 +12,7 @@ const String baseUrlOrg = 'http://13.60.50.5/api/shelter';
 const String baseUrlPet = 'http://13.60.50.5/api/pet';
 //10.0.2.2:8080
 //13.60.50.5
-
+//random
 // Save User to SharedPreferences
 Future<void> saveUserToPrefs(User user) async {
   final prefs = await SharedPreferences.getInstance();
@@ -86,7 +86,8 @@ Future<void> saveShelter(Shelter shelter) async {
     print('Error: ${response.body}');
     throw Exception('fallo al registrar org: ${response.body}');
   }
-}Future<void> savePet(Pet pet) async {
+}
+Future<void> savePet(Pet pet) async {
   final url = Uri.parse('$baseUrlPet/save');
   final response = await http.post(
     url,
@@ -105,24 +106,6 @@ Future<void> saveShelter(Shelter shelter) async {
   }
 }
 
-Future<void> uploadPetImage(Pet pet) async {
-  final url = Uri.parse('$baseUrlPet/update/${pet.id}');
-  final response = await http.put(
-    url,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(pet.toJson()),
-  );
-
-  if (response.statusCode == 200) {
-    print('Imagen subida correctamente');
-  } else {
-    print('fallo al subir imagen: ${response.statusCode}');
-    print('Error: ${response.body}');
-    throw Exception('fallo al subir imagen: ${response.body}');
-  }
-}
 Future<bool> loginUser(String username, String pass) async {
   final url = Uri.http(
     '13.60.50.5',
@@ -234,6 +217,19 @@ Future<List<String>> fetchBreeds(String query) async {
      print('Error: ${response.body}');
     throw Exception('fallo al cargar breeds');
 
+  }
+}
+
+Future<Pet?> fetchRandomPet() async {
+  final url = Uri.parse('$baseUrlPet/random');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    return Pet.fromJson(jsonDecode(response.body));
+  } else {
+    print('Fallo al obtener mascota aleatoria: ${response.statusCode}');
+    print('Error: ${response.body}');
+    return null;
   }
 }
 Future<void> sendLike(int userId, int petId) async {

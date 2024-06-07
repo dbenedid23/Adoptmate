@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'likes.dart';
 import 'perfil.dart';
@@ -9,6 +10,7 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  /*
   List<UserProfile> chatProfiles = [
     UserProfile('Dani', 'Simplemente, carlino.', ['assets/images/pug.jpeg']),
     UserProfile('Isma',
@@ -17,7 +19,7 @@ class _ChatPageState extends State<ChatPage> {
     UserProfile('Mario', 'No sabia que poner asi que agaporni, disfrutalo',
         ['assets/images/aga.jpg']),
   ];
-
+*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,6 +53,7 @@ class _ChatPageState extends State<ChatPage> {
             end: Alignment.bottomRight,
           ),
         ),
+        /*
         child: ListView.builder(
           itemCount: chatProfiles.length,
           itemBuilder: (context, index) {
@@ -85,6 +88,7 @@ class _ChatPageState extends State<ChatPage> {
             );
           },
         ),
+        */
       ),
       bottomNavigationBar: BottomAppBar(
         child: Container(
@@ -152,9 +156,9 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class ChatScreen extends StatefulWidget {
-  final UserProfile profile;
+//  final UserProfile profile;
 
-  const ChatScreen({Key? key, required this.profile}) : super(key: key);
+ // const ChatScreen({Key? key, required this.profile}) : super(key: key);
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -168,12 +172,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _messages = _chatMessages[widget.profile.name] ?? [];
+  //  _messages = _chatMessages[widget.profile.name] ?? [];
   }
 
   @override
   void dispose() {
-    _chatMessages[widget.profile.name] = _messages;
+   // _chatMessages[widget.profile.name] = _messages;
     super.dispose();
   }
 
@@ -181,7 +185,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat con ${widget.profile.name}'),
+     //   title: Text('Chat con ${widget.profile.name}'),
       ),
       body: Column(
         children: [

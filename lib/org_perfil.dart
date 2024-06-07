@@ -53,12 +53,37 @@ class _OrgPerfilPageState extends State<OrgPerfilPage> {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: ListTile(
-        leading: Icon(Icons.pets, color: Colors.orange),
+        leading: GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  content: pet.profileImage != null
+                      ? Image.memory(
+                          pet.profileImage!, // Muestra la imagen
+                          fit: BoxFit.contain,
+                        )
+                      : Icon(Icons.pets, size: 50), // Icono por defecto si no hay imagen
+                );
+              },
+            );
+          },
+          child: CircleAvatar(
+            backgroundImage: pet.profileImage != null
+                ? MemoryImage(pet.profileImage!) // Muestra la imagen
+                : null,
+            child: pet.profileImage == null
+                ? Icon(Icons.pets, color: Colors.orange)
+                : null, // Icono por defecto si no hay imagen
+          ),
+        ),
         title: Text(
           pet.name,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Raza: ${pet.breedName}, Edad: ${pet.age}, Descripción: ${pet.description}'),
+        subtitle: Text(
+            'Raza: ${pet.breedName}, Edad: ${pet.age}, Descripción: ${pet.description}'),
       ),
     );
   }
@@ -68,7 +93,7 @@ class _OrgPerfilPageState extends State<OrgPerfilPage> {
       context,
       MaterialPageRoute(builder: (context) => OrgRegisterMatePage()),
     );
-    _loadShelterData();
+    _loadShelterData(); // Recarga los datos después de regresar de la página de registro de mascota
   }
 
   @override
@@ -111,7 +136,6 @@ class _OrgPerfilPageState extends State<OrgPerfilPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                    
                     ),
                   ),
                   _buildShelterInfo('CIF', _currentShelter!.cif, Icons.business),

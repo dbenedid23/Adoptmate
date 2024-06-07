@@ -4,8 +4,10 @@ import 'perfil.dart';
 import 'user_principal.dart';
 
 class LikePage extends StatelessWidget {
+  
   @override
   Widget build(BuildContext context) {
+    /*
     List<UserProfile> likedProfiles = [
       UserProfile('Dani', 'Simplemente, carlino.', ['assets/images/pug.jpeg']),
       UserProfile(
@@ -15,7 +17,7 @@ class LikePage extends StatelessWidget {
       UserProfile('Mario', 'No sabia que poner asi que agaporni, disfrutalo',
           ['assets/images/aga.jpg']),
     ];
-
+*/
     return Scaffold(
       appBar: AppBar(
         foregroundColor: Colors.white,
@@ -39,6 +41,7 @@ class LikePage extends StatelessWidget {
         ),
         title: Text('Likes'),
       ),
+      /*
       body: ListView.builder(
         itemCount: likedProfiles.length,
         itemBuilder: (context, index) {
@@ -81,14 +84,17 @@ class LikePage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          ChatScreen(profile: likedProfiles[index])),
+                /         ChatScreen(profile: likedProfiles[index])),
                 );
               },
               child: Icon(Icons.send),
             ),
           );
+          
         },
+        
       ),
+      */
       bottomNavigationBar: BottomAppBar(
         child: Container(
           color: Colors.black,

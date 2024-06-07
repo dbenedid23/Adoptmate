@@ -34,7 +34,7 @@ class _PerfilPageState extends State<PerfilPage> {
     }
   }
 
-  Widget _buildUserInfo(String label, dynamic value, IconData icon) {
+  Widget _buildUserInfo(String label, String value, IconData icon) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: ListTile(
@@ -43,19 +43,43 @@ class _PerfilPageState extends State<PerfilPage> {
           label,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: value is Uint8List
-            ? Container(
-                height: 400, 
-                width: 400, 
-                decoration: BoxDecoration(
-                  //shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: MemoryImage(value), 
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
-            : Text(value.toString()), 
+        subtitle: Text(value),
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(Uint8List? imageBytes) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: ListTile(
+        leading: GestureDetector(
+          onTap: () {
+            if (imageBytes != null) {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    content: Image.memory(
+                      imageBytes,
+                      fit: BoxFit.contain,
+                    ),
+                  );
+                },
+              );
+            }
+          },
+          child: CircleAvatar(
+            backgroundImage:
+                imageBytes != null ? MemoryImage(imageBytes) : null,
+            child: imageBytes == null
+                ? Icon(Icons.person, color: Colors.orange)
+                : null,
+          ),
+        ),
+        title: Text(
+          _currentUser?.name ?? '',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -90,11 +114,7 @@ class _PerfilPageState extends State<PerfilPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: _currentUser != null
               ? [
-                  _buildUserInfo('Nombre', _currentUser!.name, Icons.person),
-                  _buildUserInfo(
-                    'imagen', 
-                    _currentUser!.profileImage ?? "", 
-                    Icons.image),
+                  _buildProfileImage(_currentUser!.profileImage),
                   _buildUserInfo(
                       'Teléfono',
                       _currentUser!.phone?.toString() ?? "No especificado",
@@ -116,10 +136,9 @@ class _PerfilPageState extends State<PerfilPage> {
                       _currentUser!.kids == true ? "Sí" : "No",
                       Icons.child_friendly),
                   _buildUserInfo(
-                    'Tipo de casa', 
-                   ('${_currentUser!.home ?? "No especificado"}'), 
-                    Icons.home)
-                  
+                      'Tipo de casa',
+                      ('${_currentUser!.home ?? "No especificado"}'),
+                      Icons.home),
                 ]
               : [
                   Padding(
