@@ -55,19 +55,42 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
             content: pet,
             likeAction: () {
               _fetchRandomPet();
-              print('Has dado like a: ');
-              print(pet.name);
-
+              print("like");
+              _showSnackBar(context, 'LIKE', pet.name, Colors.green);
             },
             nopeAction: () {
               _fetchRandomPet();
-              print('Has dado dislike a: ');
-              print(pet.name);
+              print("dislike");
+              _showSnackBar(context, 'DISLIKE', pet.name, Colors.red);
             },
           ),
         );
       });
     }
+  }
+
+  void _showSnackBar(BuildContext context, String action, String name, Color color) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: color,
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              action == 'LIKE' ? Icons.thumb_up : Icons.thumb_down,
+              color: Colors.white,
+            ),
+            SizedBox(width: 2),
+            Text(
+              '$action to $name',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        duration: Duration(milliseconds: 180),
+      ),
+    );
   }
 
   void toggleExpansion() {
