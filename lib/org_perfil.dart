@@ -68,7 +68,7 @@ class _OrgPerfilPageState extends State<OrgPerfilPage> {
       context,
       MaterialPageRoute(builder: (context) => OrgRegisterMatePage()),
     );
-    _loadShelterData(); // Recarga los datos después de regresar de la página de registro de mascota
+    _loadShelterData();
   }
 
   @override

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'models/api_service.dart';
 import 'models/pet.dart';
 import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class OrgRegisterMatePage extends StatefulWidget {
   @override
@@ -18,6 +20,8 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
 
   int _currentStep = 0;
   List<String> _breedSuggestions = [];
+  Uint8List? _imageBytes;
+  Pet? _registeredPet;
 
   @override
   Widget build(BuildContext context) {
@@ -45,14 +49,15 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
             child: ElevatedButton(
               onPressed: () {
                 if (_validateCurrentStep()) {
-                  if (_currentStep == 5) {
-                    _submit();
-                  } else {
+                  if (_currentStep == 6) {
+                    _submitPet();
+                    Navigator.pop(context);
+                  }  else {
                     _moveToNextStep();
                   }
                 }
               },
-              child: Text(_currentStep == 5 ? 'Finalizar' : 'Continuar'),
+              child: Text(_currentStep == 6 ? 'Finalizar' : 'Continuar'),
             ),
           ),
         ],
@@ -134,9 +139,35 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
         );
       case 5:
         return _buildBreedField();
+      case 6:
+        return _buildFinalStep(); // Añadir paso de subir imagen
       default:
         return Container();
     }
+  }
+  Widget _buildFinalStep() {
+    return Padding(
+      padding: const EdgeInsets.all(15.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sube una imagen para tu perfil'),
+          SizedBox(height: 8),
+          InkWell(
+            onTap: _pickImage,
+            child: Container(
+              width: 100,
+              height: 100,
+              color: Colors.grey[200],
+              child: _imageBytes == null
+                  ? Icon(Icons.add_a_photo, size: 50)
+                  : Image.memory(_imageBytes!, fit: BoxFit.cover),
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextFieldWithButton({
@@ -334,6 +365,8 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
           _breedController.text.trim(),
           'Por favor, introduce la raza de la mascota.',
         );
+      case 6:
+        return true;
       default:
         return true;
     }
@@ -350,6 +383,17 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
     return true;
   }
 
+  void _pickImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      final Uint8List bytes = await pickedImage.readAsBytes();
+      setState(() {
+        _imageBytes = bytes;
+      });
+    }
+  }
   void _showValidationError(String message) {
     showDialog(
       context: context,
@@ -366,7 +410,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
     );
   }
 
-  void _submit() async {
+  void _submitPet() async {
     final pet = Pet(
       name: _nameController.text.trim(),
       sex: _sexController.text.trim()[0], 
@@ -374,15 +418,16 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
       description: _descriptionController.text.trim(),
       shelterName: _shelterController.text.trim(),
       breedName: _breedController.text.trim(),
+      profileImage: _imageBytes,
     );
     print("pet data: ${jsonEncode(pet.toJson())}");
-    try {
-      await savePet(pet);
-      print('Pet registrado correctamente');
-      Navigator.pop(context);
-    } catch (e) {
-      print('Fallo al registrar pet: $e');
-      _showValidationError('Fallo al registrar la mascota');
-    }
+    
+    savePet(pet).then((_) {
+      print('pet registrado');
+    }).catchError((error) {
+      print('Fallo al guardar pet: $error');
+      _showValidationError('Fallo al guardar user');
+    });
   }
+
 }

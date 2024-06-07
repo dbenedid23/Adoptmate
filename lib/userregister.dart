@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +23,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   bool _hasPets = false;
   bool _hasChildren = false;
   HomeType? _homeType;
-  //File? _image;
   Uint8List? _imageBytes;
 
   int _currentStep = 0;
@@ -88,8 +86,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               return false;
             }
             if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(value)) {
-              _showValidationError(
-                  'El nombre solo puede contener letras y espacios.');
+              _showValidationError('El nombre solo puede contener letras y espacios.');
               return false;
             }
             return true;
@@ -202,13 +199,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
             ),
             controller: controller,
             obscureText: isPassword,
-            validator: (value) {
-              // return validator!(value);
-            },
           ),
-          SizedBox(
-            height: 8,
-          ),
+          SizedBox(height: 8),
           Text(
             'Ejemplo: $sampleText',
             style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -243,13 +235,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               prefixIcon: Icon(prefixIcon),
             ),
             controller: controller,
-            validator: (value) {
-              // return validator!(value);
-            },
           ),
-          SizedBox(
-            height: 8,
-          ),
+          SizedBox(height: 8),
           Text(
             'Ejemplo: $sampleText',
             style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -274,9 +261,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               });
             },
           ),
-          SizedBox(
-            height: 8,
-          ),
+          SizedBox(height: 8),
           Text('¿Tiene niños?'),
           Checkbox(
             value: _hasChildren,
@@ -425,10 +410,8 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
     if (pickedImage != null) {
       final Uint8List bytes = await pickedImage.readAsBytes();
-      
-      
+
       setState(() {
-        Image.memory(bytes);
         _imageBytes = bytes;
       });
     }

@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'shelter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user.dart';
 import 'pet.dart';
+
 
 const String baseUrl = 'http://13.60.50.5/api/user';
 const String baseUrlOrg = 'http://13.60.50.5/api/shelter';
@@ -59,7 +61,7 @@ Future<void> saveUser(User user) async {
     body: jsonEncode(user.toJson()),
   );
 
-  if (response.statusCode == 200 || response.statusCode == 201) {
+  if (response.statusCode == 200) {
     print('User registrado correctamente');
   } else {
     print('fallo al registrar user: ${response.statusCode}');
@@ -84,8 +86,7 @@ Future<void> saveShelter(Shelter shelter) async {
     print('Error: ${response.body}');
     throw Exception('fallo al registrar org: ${response.body}');
   }
-}
- Future<void> savePet(Pet pet) async {
+}Future<void> savePet(Pet pet) async {
   final url = Uri.parse('$baseUrlPet/save');
   final response = await http.post(
     url,
@@ -95,13 +96,31 @@ Future<void> saveShelter(Shelter shelter) async {
     body: jsonEncode(pet.toJson()),
   );
 
-  if (response.statusCode == 200 || response.statusCode == 201) {
+  if (response.statusCode == 200) {
     print('pet registrado correctamente');
   } else {
     print('fallo al registrar pet: ${response.statusCode}');
     print('Error: ${response.body}');
-    print(pet.toString());
     throw Exception('fallo al registrar pet: ${response.body}');
+  }
+}
+
+Future<void> uploadPetImage(Pet pet) async {
+  final url = Uri.parse('$baseUrlPet/update/${pet.id}');
+  final response = await http.put(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(pet.toJson()),
+  );
+
+  if (response.statusCode == 200) {
+    print('Imagen subida correctamente');
+  } else {
+    print('fallo al subir imagen: ${response.statusCode}');
+    print('Error: ${response.body}');
+    throw Exception('fallo al subir imagen: ${response.body}');
   }
 }
 Future<bool> loginUser(String username, String pass) async {
@@ -124,6 +143,7 @@ Future<bool> loginUser(String username, String pass) async {
       }
       var usuario = jsonDecode(response.body);
      if (usuario != null && usuario['name'] == username && usuario['password'] == pass) {
+        print(response.body);
         final token = usuario['token'] ?? '';
         final user = User.fromJson(usuario); 
         await saveToken(token);
@@ -206,7 +226,7 @@ Future<List<String>> fetchBreeds(String query) async {
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
-    List<dynamic> breedsJson = jsonDecode(response.body);
+     List<dynamic> breedsJson = jsonDecode(response.body);
      List<String> breedNames = breedsJson.map((breed) => breed['name'] as String).toList();
     return breedNames;
   } else {

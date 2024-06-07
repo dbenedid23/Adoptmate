@@ -7,6 +7,7 @@ enum HomeType {
 }
 
 class User {
+  final int? id;
   final String name;
   final String password;
   final int? phone;
@@ -24,6 +25,7 @@ class User {
   final List<dynamic> likedPets;
 
   User({
+    this.id,
     required this.name,
     required this.password,
     this.phone,
@@ -42,6 +44,7 @@ class User {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'password': password,
       'phone': phone,
@@ -50,7 +53,7 @@ class User {
       'pets': pets,
       'kids': kids,
       'home': home != null ? home.toString().split('.').last : null,
-      'profileImage': profileImage != null ? profileImage : null, // Enviar datos binarios directamente
+      'profileImage': profileImage != null ? base64Encode(profileImage!) : null, 
       'statements': statements,
       'messages': messages,
       'reachedShelters': reachedShelters,
@@ -61,6 +64,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
+      id: json['id'] ?? '',
       name: json['name'] ?? '',
       password: json['password'] ?? '',
       description: json['description'] ?? '',
@@ -69,7 +73,7 @@ class User {
       pets: json['pets'] ?? false,
       kids: json['kids'] ?? false,
       home: json['home'] != null ? HomeType.values.firstWhere((e) => e.toString().split('.').last == json['home']) : null,
-      profileImage: json['profileImage'] != null ? Uint8List.fromList(List<int>.from(json['profileImage'])) : null, // Decodificar imagen desde datos binarios
+      profileImage: json['profileImage'] != null ? base64Decode(json['profileImage']) : null, 
       statements: json['statements'] ?? [],
       messages: json['messages'] ?? [],
       reachedShelters: json['reachedShelters'] ?? [],
