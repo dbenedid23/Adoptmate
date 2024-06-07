@@ -6,6 +6,10 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 
 class OrgRegisterMatePage extends StatefulWidget {
+  final String shelterName;
+
+  OrgRegisterMatePage({required this.shelterName});
+
   @override
   _OrgRegisterMatePageState createState() => _OrgRegisterMatePageState();
 }
@@ -15,13 +19,19 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
   final TextEditingController _sexController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _shelterController = TextEditingController();
   final TextEditingController _breedController = TextEditingController();
+  late final TextEditingController _shelterController;
 
   int _currentStep = 0;
   List<String> _breedSuggestions = [];
   Uint8List? _imageBytes;
   Pet? _registeredPet;
+
+  @override
+  void initState() {
+    super.initState();
+    _shelterController = TextEditingController(text: widget.shelterName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +62,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
                   if (_currentStep == 6) {
                     _submitPet();
                     Navigator.pop(context);
-                  }  else {
+                  } else {
                     _moveToNextStep();
                   }
                 }
@@ -130,21 +140,24 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
             return true;
           },
         );
+        
       case 4:
         return _buildTextFieldWithButton(
           labelText: 'Refugio',
           hintText: 'Introduce el nombre del refugio',
           controller: _shelterController,
           sampleText: 'Refugio de animales',
+          enabled: false,
         );
       case 5:
         return _buildBreedField();
       case 6:
-        return _buildFinalStep(); // Añadir paso de subir imagen
+        return _buildFinalStep();
       default:
         return Container();
     }
   }
+
   Widget _buildFinalStep() {
     return Padding(
       padding: const EdgeInsets.all(15.0),
@@ -177,6 +190,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
     required String sampleText,
     TextInputType keyboardType = TextInputType.text,
     bool Function(String?)? validator,
+    bool enabled = true,
   }) {
     return Padding(
       padding: const EdgeInsets.all(15.0),
@@ -190,6 +204,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
             ),
             controller: controller,
             keyboardType: keyboardType,
+            enabled: enabled,
           ),
           SizedBox(
             height: 8,
@@ -356,10 +371,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
           },
         );
       case 4:
-        return _validateStep(
-          _shelterController.text.trim(),
-          'Por favor, introduce el nombre del refugio.',
-        );
+        return true; // El campo del refugio ya está validado al inicio
       case 5:
         return _validateStep(
           _breedController.text.trim(),
@@ -394,6 +406,7 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
       });
     }
   }
+
   void _showValidationError(String message) {
     showDialog(
       context: context,
@@ -429,5 +442,4 @@ class _OrgRegisterMatePageState extends State<OrgRegisterMatePage> {
       _showValidationError('Fallo al guardar user');
     });
   }
-
 }

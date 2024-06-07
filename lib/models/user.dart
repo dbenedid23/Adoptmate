@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'shelter.dart';
 
 enum HomeType {
   APARTMENT,

@@ -43,7 +43,12 @@ class _PerfilPageState extends State<PerfilPage> {
           label,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(value),
+        subtitle: value.contains(",")
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: value.split(",").map((item) => Text(item.trim())).toList(),
+              )
+            : Text(value),
       ),
     );
   }
@@ -69,8 +74,7 @@ class _PerfilPageState extends State<PerfilPage> {
             }
           },
           child: CircleAvatar(
-            backgroundImage:
-                imageBytes != null ? MemoryImage(imageBytes) : null,
+            backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
             child: imageBytes == null
                 ? Icon(Icons.person, color: Colors.orange)
                 : null,

@@ -1,19 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'models/user.dart';
+import 'models/shelter.dart';
 import 'org_chat.dart';
 import 'org_perfil.dart';
 import 'org_principal.dart';
+import 'models/api_service.dart';
 
-class OrgLikePage extends StatelessWidget {
+class OrgLikePage extends StatefulWidget {
+  @override
+  _OrgLikePageState createState() => _OrgLikePageState();
+}
+
+class _OrgLikePageState extends State<OrgLikePage> {
+  Shelter? _currentShelter;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShelterData();
+  }
+
+  Future<void> _loadShelterData() async {
+    Shelter? shelter = await loadShelterFromPrefs();
+    if (shelter != null) {
+      setState(() {
+        _currentShelter = shelter;
+      });
+      print('Shelter cargado: ${shelter.name}');
+      print('Matched Users: ${shelter.matchedUsers}');
+    } else {
+      print('No se pudo cargar el shelter');
+    }
+  }
+
+  Widget _buildMatchedUsersList(List<dynamic> matchedUsers) {
+    if (matchedUsers.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          'No hay usuarios que hayan hecho match',
+          style: TextStyle(fontSize: 18, color: Colors.red),
+        ),
+      );
+    }
+
+    Set<String> userNames = {}; // Para rastrear nombres únicos
+    List<Widget> userWidgets = [];
+
+    for (var userData in matchedUsers) {
+      if (userData is Map<String, dynamic>) {
+        final String name = userData['name'] ?? 'No especificado';
+        if (!userNames.contains(name)) {
+          userNames.add(name);
+          userWidgets.add(
+            Card(
+              margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+              child: ListTile(
+                title: Text(
+                  name,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Teléfono: ${userData['phone'] ?? 'No especificado'}'),
+                    Text('Descripción: ${userData['description'] ?? 'No especificado'}'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    return Column(children: userWidgets);
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<OrgProfile> likedProfiles = [
-      OrgProfile('Dani', 'Simplemente, carlino.', ['assets/images/pug.jpeg']),
-      OrgProfile(
-          'Isma',
-          'Perfil para Isma, a tope con los gatetes si no le pongo esto nos suspende asi que bueno... simplemente estoy haciendo essto para que ocupe mas, pues eso',
-          ['assets/images/gato1.jpg']),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         foregroundColor: Colors.white,
@@ -37,55 +104,23 @@ class OrgLikePage extends StatelessWidget {
         ),
         title: Text('Likes'),
       ),
-      body: ListView.builder(
-        itemCount: likedProfiles.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      content: Image.asset(
-                        likedProfiles[index].images[0],
-                        fit: BoxFit.contain,
-                      ),
-                    );
-                  },
-                );
-              },
-              child: CircleAvatar(
-                backgroundImage: AssetImage(likedProfiles[index].images[0]),
-              ),
-            ),
-            title: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(likedProfiles[index].name),
-                      content: Text(likedProfiles[index].description),
-                    );
-                  },
-                );
-              },
-              child: Text(likedProfiles[index].name),
-            ),
-            trailing: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          ChatScreen(profile: likedProfiles[index])),
-                );
-              },
-              child: Icon(Icons.send),
-            ),
-          );
-        },
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _currentShelter != null
+              ? [
+                  _buildMatchedUsersList(_currentShelter!.matchedUsers),
+                ]
+              : [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'No se pudo cargar el shelter',
+                      style: TextStyle(fontSize: 18, color: Colors.red),
+                    ),
+                  ),
+                ],
+        ),
       ),
       bottomNavigationBar: BottomAppBar(
         child: Container(

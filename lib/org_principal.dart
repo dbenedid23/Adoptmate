@@ -1,40 +1,14 @@
+import 'package:AdoptMate/models/shelter.dart';
+import 'package:AdoptMate/org_chat.dart';
+import 'package:AdoptMate/org_likes.dart';
+import 'package:AdoptMate/org_perfil.dart';
 import 'package:flutter/material.dart';
 import 'package:swipe_cards/swipe_cards.dart';
-import 'org_chat.dart';
-import 'org_likes.dart';
-import 'org_perfil.dart';
-
-class OrgProfile {
-  final String name;
-  final String description;
-  final List<String> images;
-
-  OrgProfile(this.name, this.description, this.images);
-}
+import 'models/api_service.dart';
+import 'models/user.dart';
+import 'models/pet.dart'; // Asegúrate de importar el modelo Pet
 
 class OrgPrincipal extends StatelessWidget {
-  final List<OrgProfile> profiles = [
-    OrgProfile(
-      'Bene',
-      'Simplemente, carlino.',
-      [
-        'assets/images/pug.jpeg',
-        'assets/images/pugsito.jpeg',
-        'assets/images/pugsi.jpg',
-      ],
-    ),
-    OrgProfile(
-      'Isma',
-      'Perfil para Isma, a tope con los gatetes si no le pongo esto nos suspende asi que bueno... simplemente estoy haciendo essto para que ocupe mas, pues eso ' +
-          'bogibogi wangwang',
-      [
-        'assets/images/gato1.jpg',
-        'assets/images/gato2.jpeg',
-        'assets/images/gato3.jpg',
-      ],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -42,87 +16,136 @@ class OrgPrincipal extends StatelessWidget {
       theme: ThemeData(
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: OrgPrincipalPage(profiles),
+      home: OrgPrincipalPage(),
     );
   }
 }
 
 class OrgPrincipalPage extends StatefulWidget {
-  final List<OrgProfile> profiles;
-
-  OrgPrincipalPage(this.profiles);
-
   @override
   _OrgPrincipalPageState createState() => _OrgPrincipalPageState();
 }
 
 class _OrgPrincipalPageState extends State<OrgPrincipalPage> {
-  late List<SwipeItem> swipeItems;
+  List<SwipeItem> swipeItems = [];
   late MatchEngine matchEngine;
-  int currentProfileIndex = 0;
-  int currentImageIndex = 0;
+  bool expanded = false;
 
   @override
   void initState() {
     super.initState();
-    swipeItems = widget.profiles.map((profile) {
-      return SwipeItem(
-        content: profile,
-        likeAction: () {
-          changeProfile(true);
-        },
-        nopeAction: () {
-          changeProfile(false);
-        },
-      );
-    }).toList();
-
     matchEngine = MatchEngine(swipeItems: swipeItems);
+    _loadInitialUsers();
   }
 
-  void changeProfile(bool like) {
+  Future<void> _loadInitialUsers() async {
+    for (int i = 0; i < 5; i++) {
+      await _fetchRandomUser();
+    }
     setState(() {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: like ? Colors.green : Colors.red,
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                like ? Icons.thumb_up : Icons.thumb_down,
-                color: Colors.white,
-              ),
-              SizedBox(width: 8),
-              Text(
-                like ? 'LIKE' : 'DISLIKE',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
+      matchEngine = MatchEngine(swipeItems: swipeItems);
+    });
+  }
+
+  Future<void> _fetchRandomUser() async {
+    User? user = await fetchRandomUser();
+    if (user != null) {
+      setState(() {
+        swipeItems.add(
+          SwipeItem(
+            content: user,
+            likeAction: () {
+              _fetchRandomUser();
+              print("like");
+              _showSnackBar(context, 'LIKE', user.name, Colors.green);
+              print("like desde un shelter para user");
+              _sendLike(user.id!);
+            },
+            nopeAction: () {
+              _fetchRandomUser();
+              print("dislike");
+              _showSnackBar(context, 'DISLIKE', user.name, Colors.red);
+            },
           ),
-          duration: Duration(seconds: 1),
-        ),
-      );
+        );
+      });
+    }
+  }
 
-      currentProfileIndex = (currentProfileIndex + 1) % widget.profiles.length;
-      currentImageIndex = 0; // Reset the image index when changing profile
+  Future<void> _sendLike(int userId) async {
+    Shelter? currentShelter = await loadShelterFromPrefs();
+    if (currentShelter != null && currentShelter.pets.isNotEmpty) {
+      // Asumiendo que el shelter tiene al menos una pet
+      int petId = currentShelter.pets.first.id!;
+      await sendLikeShelterToUser(petId, userId);
+    } else {
+      print("El shelter no tiene pets o no está logueado correctamente");
+    }
+  }
+
+  void _showSnackBar(BuildContext context, String action, String name, Color color) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: color,
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              action == 'LIKE' ? Icons.thumb_up : Icons.thumb_down,
+              color: Colors.white,
+            ),
+            SizedBox(width: 2),
+            Text(
+              '$action to $name',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        duration: Duration(milliseconds: 180),
+      ),
+    );
+  }
+
+  void toggleExpansion() {
+    setState(() {
+      expanded = !expanded;
     });
   }
 
-  void _changeImage(int direction) {
-    setState(() {
-      currentImageIndex =
-          (currentImageIndex + direction) % widget.profiles[currentProfileIndex].images.length;
-      if (currentImageIndex < 0) {
-        currentImageIndex += widget.profiles[currentProfileIndex].images.length;
-      }
-    });
+  void _showDescriptionDialog(BuildContext context, User user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(user.name),
+          content: SingleChildScrollView(
+            child: Text(
+              user.description ?? 'no',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text('AdoptMate'),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -132,245 +155,214 @@ class _OrgPrincipalPageState extends State<OrgPrincipalPage> {
             ),
           ),
         ),
-        title: Text('AdoptMate'),
         foregroundColor: Colors.white,
       ),
-      body: GestureDetector(
-        onTapUp: (details) {
-          final RenderBox box = context.findRenderObject() as RenderBox;
-          final localOffset = box.globalToLocal(details.globalPosition);
-          final screenWidth = box.size.width;
-
-          if (localOffset.dx > screenWidth / 2) {
-            _changeImage(1); // Next image
-          } else {
-            _changeImage(-1); // Previous image
-          }
-        },
-        child: Column(
-          children: [
-            Expanded(
-              child: SwipeCards(
-                matchEngine: matchEngine,
-                itemBuilder: (BuildContext context, int index) {
-                  OrgProfile profile = widget.profiles[index % widget.profiles.length];
-                  return Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.asset(
-                          profile.images[currentImageIndex],
-                          fit: BoxFit.cover,
+      body: swipeItems.isNotEmpty
+          ? SwipeCards(
+              matchEngine: matchEngine,
+              itemBuilder: (BuildContext context, int index) {
+                User user = swipeItems[index].content;
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: user.profileImage != null
+                          ? Image.memory(
+                              user.profileImage!,
+                              fit: BoxFit.cover,
+                            )
+                          : Icon(Icons.person, size: 100),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                matchEngine.currentItem?.nope();
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(0, 255, 255, 255),
+                                  borderRadius: BorderRadius.circular(50),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.5),
+                                      spreadRadius: 2,
+                                      blurRadius: 3,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.red,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                matchEngine.currentItem?.like();
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(0, 255, 255, 255),
+                                  borderRadius: BorderRadius.circular(50),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.5),
+                                      spreadRadius: 2,
+                                      blurRadius: 3,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.favorite,
+                                  color: Colors.green,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
+                    ),
+                    Positioned(
+                      left: 16,
+                      bottom: 120,
+                      child: GestureDetector(
+                        onTap: () {
+                          toggleExpansion();
+                        },
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color.fromARGB(255, 56, 56, 56).withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 3,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              InkWell(
-                                onTap: () {
-                                  matchEngine.currentItem?.nope();
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(0, 255, 255, 255),
-                                    borderRadius: BorderRadius.circular(50),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.5),
-                                        spreadRadius: 2,
-                                        blurRadius: 3,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
+                              Row(
+                                children: [
+                                  Text(
+                                    user.name ?? 'Unknown',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: const Color.fromARGB(255, 14, 14, 14),
+                                    ),
                                   ),
-                                  child: Icon(
-                                    Icons.close,
-                                    color: Colors.red,
-                                    size: 48,
+                                  SizedBox(width: 8),
+                                  InkWell(
+                                    onTap: () {
+                                      _showDescriptionDialog(context, user);
+                                    },
+                                    child: Icon(
+                                      Icons.info,
+                                      color: const Color.fromARGB(255, 255, 255, 255),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (expanded)
+                                Container(
+                                  constraints: BoxConstraints(
+                                    maxHeight: MediaQuery.of(context).size.height * 0.4,
+                                    maxWidth: MediaQuery.of(context).size.width - 32,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    child: Text(
+                                      user.description ?? 'No description available',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  matchEngine.currentItem?.like();
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(0, 255, 255, 255),
-                                    borderRadius: BorderRadius.circular(50),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.5),
-                                        spreadRadius: 2,
-                                        blurRadius: 3,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.favorite,
-                                    color: Colors.green,
-                                    size: 48,
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: 16,
-                        bottom: 120,
-                        child: GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text(profile.name),
-                                  content: SingleChildScrollView(
-                                    child: Text(
-                                      profile.description,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text('Cerrar'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color.fromARGB(255, 56, 56, 56)
-                                      .withOpacity(0.5),
-                                  spreadRadius: 2,
-                                  blurRadius: 3,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      profile.name,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                        color: const Color.fromARGB(255, 14, 14, 14),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Icon(
-                                      Icons.info,
-                                      color: const Color.fromARGB(255, 255, 255, 255),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                onStackFinished: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("No more profiles!"),
-                      duration: Duration(seconds: 2),
                     ),
+                  ],
+                );
+              },
+              onStackFinished: () {
+                _loadInitialUsers();
+              },
+              upSwipeAllowed: false,
+              fillSpace: true,
+            )
+          : Center(child: CircularProgressIndicator()),
+      bottomNavigationBar: Container(
+        color: Colors.black,
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrgChatPage()),
                   );
                 },
-                itemChanged: (SwipeItem item, int index) {
-                  setState(() {
-                    currentProfileIndex = index % widget.profiles.length;
-                    currentImageIndex = 0; // Reset the image index when changing profile
-                  });
-                },
-                upSwipeAllowed: false,
-                fillSpace: true,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[900],
+                ),
+                child: Icon(
+                  Icons.chat_bubble,
+                  color: Colors.white,
+                ),
               ),
             ),
-            Container(
-              color: Colors.black,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => OrgChatPage()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[900],
-                      ),
-                      child: Icon(
-                        Icons.chat_bubble,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => OrgLikePage()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[900],
-                      ),
-                      child: Icon(
-                        Icons.favorite,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => OrgPerfilPage()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[900],
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrgLikePage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[900],
+                ),
+                child: Icon(
+                  Icons.favorite,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) =>OrgPerfilPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[900],
+                ),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],

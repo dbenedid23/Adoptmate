@@ -1,8 +1,13 @@
-
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'models/user.dart';
+import 'models/shelter.dart';
+import 'models/message.dart';
 import 'likes.dart';
 import 'perfil.dart';
 import 'user_principal.dart';
+import 'models/api_service.dart';
 
 class ChatPage extends StatefulWidget {
   @override
@@ -10,16 +15,143 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  /*
-  List<UserProfile> chatProfiles = [
-    UserProfile('Dani', 'Simplemente, carlino.', ['assets/images/pug.jpeg']),
-    UserProfile('Isma',
-        'Perfil para Isma, a tope con los gatetes si no le pongo esto nos suspende asi que bueno... simplemente estoy haciendo essto para que ocupe mas, pues eso',
-        ['assets/images/gato1.jpg']),
-    UserProfile('Mario', 'No sabia que poner asi que agaporni, disfrutalo',
-        ['assets/images/aga.jpg']),
-  ];
-*/
+  User? _currentUser;
+  Map<String, List<Message>> _chatMessages = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    User? user = await loadUserFromPrefs();
+    if (user != null) {
+      setState(() {
+        _currentUser = user;
+      });
+      print('Usuario cargado: ${user.name}');
+      await _loadAllMessages();
+    } else {
+      print('No se pudo cargar el usuario');
+    }
+  }
+
+  Future<void> _loadAllMessages() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    for (var shelterData in _currentUser!.matchedShelters) {
+      final Map<String, dynamic> shelter = shelterData as Map<String, dynamic>;
+      final String name = shelter['name']?.toString() ?? 'No especificado';
+      String? storedMessages = prefs.getString('chat_$name');
+      if (storedMessages != null) {
+        setState(() {
+          _chatMessages[name] = (jsonDecode(storedMessages) as List)
+              .map((data) => Message.fromJson(data))
+              .toList();
+        });
+      }
+    }
+  }
+
+  Widget _buildMatchedSheltersList(List<dynamic> matchedShelters) {
+    Set<String> shelterNames = {};
+    List<Widget> shelterWidgets = [];
+
+    for (var shelterData in matchedShelters) {
+      final Map<String, dynamic> shelter = shelterData as Map<String, dynamic>;
+      final String name = shelter['name']?.toString() ?? 'No especificado';
+      if (!shelterNames.contains(name)) {
+        shelterNames.add(name);
+        String lastMessage = (_chatMessages[name]?.isNotEmpty ?? false)
+            ? _chatMessages[name]!.last.text // Mostrar el último mensaje
+            : 'No hay mensajes';
+
+        shelterWidgets.add(
+          Card(
+            margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: ListTile(
+              title: Text(
+                name,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(lastMessage),
+              trailing: IconButton(
+                icon: Icon(Icons.chat),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(
+                        currentUser: _currentUser!,
+                        shelterName: name,
+                        shelterPhone: shelter['phone']?.toString() ?? 'No especificado',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return Column(children: shelterWidgets);
+  }
+
+  Widget _buildChatList() {
+    if (_currentUser == null) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    final List<dynamic> matchedShelters = _currentUser!.matchedShelters;
+    Set<String> shelterNames = {};
+
+    List<Widget> chatWidgets = matchedShelters.map((shelterData) {
+      final Map<String, dynamic> shelter = shelterData as Map<String, dynamic>;
+      final String name = shelter['name']?.toString() ?? 'No especificado';
+      if (!shelterNames.contains(name)) {
+        shelterNames.add(name);
+        String lastMessage = (_chatMessages[name]?.isNotEmpty ?? false)
+            ? _chatMessages[name]!.last.text // Mostrar el último mensaje
+            : 'No hay mensajes';
+
+        return Card(
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: ListTile(
+            title: Text(
+              name,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(lastMessage),
+            trailing: IconButton(
+              icon: Icon(Icons.chat),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      currentUser: _currentUser!,
+                      shelterName: name,
+                      shelterPhone: shelter['phone']?.toString() ?? 'No especificado',
+                      messages: _chatMessages[name] ?? [],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        return Container();
+      }
+    }).toList();
+
+    return ListView(children: chatWidgets);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,49 +178,7 @@ class _ChatPageState extends State<ChatPage> {
         foregroundColor: Colors.white,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF7ED957), Color(0xFFFAB134)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        /*
-        child: ListView.builder(
-          itemCount: chatProfiles.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              leading: GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        content: Image.asset(
-                          chatProfiles[index].images[0],
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    },
-                  );
-                },
-                child: CircleAvatar(
-                  backgroundImage: AssetImage(chatProfiles[index].images[0]),
-                ),
-              ),
-              title: Text(chatProfiles[index].name),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          ChatScreen(profile: chatProfiles[index])),
-                );
-              },
-            );
-          },
-        ),
-        */
+        child: _currentUser != null ? _buildChatList() : Center(child: CircularProgressIndicator()),
       ),
       bottomNavigationBar: BottomAppBar(
         child: Container(
@@ -156,9 +246,18 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class ChatScreen extends StatefulWidget {
-//  final UserProfile profile;
+  final User currentUser;
+  final String shelterName;
+  final String shelterPhone;
+  final List<Message> messages;
 
- // const ChatScreen({Key? key, required this.profile}) : super(key: key);
+  const ChatScreen({
+    Key? key,
+    required this.currentUser,
+    required this.shelterName,
+    required this.shelterPhone,
+    this.messages = const [],
+  }) : super(key: key);
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -166,18 +265,35 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
-  List<Message> _messages = [];
-  Map<String, List<Message>> _chatMessages = {};
+  late List<Message> _messages;
 
   @override
   void initState() {
     super.initState();
-  //  _messages = _chatMessages[widget.profile.name] ?? [];
+    _messages = widget.messages;
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? storedMessages = prefs.getString('chat_${widget.shelterName}');
+    if (storedMessages != null) {
+      setState(() {
+        _messages = (jsonDecode(storedMessages) as List)
+            .map((data) => Message.fromJson(data))
+            .toList();
+      });
+    }
+  }
+
+  Future<void> _saveMessages() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('chat_${widget.shelterName}', jsonEncode(_messages));
   }
 
   @override
   void dispose() {
-   // _chatMessages[widget.profile.name] = _messages;
+    _saveMessages();
     super.dispose();
   }
 
@@ -185,7 +301,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-     //   title: Text('Chat con ${widget.profile.name}'),
+        title: Text('Chat con ${widget.shelterName}'),
       ),
       body: Column(
         children: [
@@ -223,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessage(Message message) {
-    bool isSentByUser = message.sender == 'Usuario';
+    bool isSentByUser = message.issuer == 'USER';
 
     return Align(
       alignment: isSentByUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -238,27 +354,39 @@ class _ChatScreenState extends State<ChatScreen> {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         child: Text(
-          message.content,
+          message.text,
           softWrap: true,
         ),
       ),
     );
   }
 
-  void _sendMessage() {
-    setState(() {
-      String messageContent = _messageController.text;
-      if (messageContent.isNotEmpty) {
-        _messages.insert(0, Message(sender: 'Usuario', content: messageContent));
-        _messageController.clear();
+  void _sendMessage() async {
+    String messageContent = _messageController.text;
+    if (messageContent.isNotEmpty) {
+      setState(() {
+        _messages.insert(0, Message(
+          time: DateTime.now(),
+          text: messageContent,
+          issuer: 'USER',
+          user: widget.currentUser,
+          shelter: Shelter(
+            id: 0,
+            cif: '',  // Proporcione el cif aquí
+            name: widget.shelterName,
+            password: '',  // Proporcione la contraseña aquí
+            location: '',  // Proporcione la ubicación aquí
+            phone: int.parse(widget.shelterPhone),
+          ),
+        ));
+      });
+      _messageController.clear();
+
+      try {
+        await sendMessage(widget.currentUser.name, widget.shelterName, messageContent);
+      } catch (e) {
+        print('Error al enviar mensaje: $e');
       }
-    });
+    }
   }
-}
-
-class Message {
-  final String sender;
-  final String content;
-
-  Message({required this.sender, required this.content});
 }

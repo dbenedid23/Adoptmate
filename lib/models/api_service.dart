@@ -5,15 +5,16 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user.dart';
 import 'pet.dart';
+import 'message.dart';
 
-
-const String baseUrl = 'http://13.60.50.5/api/user';
-const String baseUrlOrg = 'http://13.60.50.5/api/shelter';
-const String baseUrlPet = 'http://13.60.50.5/api/pet';
+const String baseUrl = 'http://13.49.46.186/api/user';
+const String baseUrlOrg = 'http://13.49.46.186/api/shelter';
+const String baseUrlPet = 'http://13.49.46.186/api/pet';
 //10.0.2.2:8080
 //13.60.50.5
 //random
 // Save User to SharedPreferences
+
 Future<void> saveUserToPrefs(User user) async {
   final prefs = await SharedPreferences.getInstance();
   prefs.setString('user', jsonEncode(user.toJson()));
@@ -108,7 +109,7 @@ Future<void> savePet(Pet pet) async {
 
 Future<bool> loginUser(String username, String pass) async {
   final url = Uri.http(
-    '13.60.50.5',
+    '13.49.46.186',
     '/api/user/login',
     {
       'username': username,
@@ -154,7 +155,7 @@ Future<bool> loginUser(String username, String pass) async {
 }
 Future<bool> loginShelter(String username, String pass) async {
     final url = Uri.http(
-    '13.60.50.5',
+    '13.49.46.186',
     '/api/shelter/login',
     {
       'username': username,
@@ -199,7 +200,7 @@ Future<bool> loginShelter(String username, String pass) async {
 }
 Future<List<String>> fetchBreeds(String query) async {
   final url = Uri.http(
-    '13.60.50.5',
+    '13.49.46.186',
     '/api/pet/breeds',
     {
       'name': query,
@@ -225,6 +226,7 @@ Future<Pet?> fetchRandomPet() async {
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
+    print(response.body);
     return Pet.fromJson(jsonDecode(response.body));
   } else {
     print('Fallo al obtener mascota aleatoria: ${response.statusCode}');
@@ -232,19 +234,28 @@ Future<Pet?> fetchRandomPet() async {
     return null;
   }
 }
-Future<void> sendLike(int userId, int petId) async {
-  final url = Uri.parse('$baseUrl/like');
+Future<User?> fetchRandomUser() async {
+  final url = Uri.parse('$baseUrl/random');
+  final response = await http.get(url);
 
+  if (response.statusCode == 200) {
+    print(response.body);
+    return User.fromJson(jsonDecode(response.body));
+
+  } else {
+    print('Fallo al obtener user aleatorio: ${response.statusCode}');
+    print('Error: ${response.body}');
+    return null;
+  }
+}
+Future<void> sendLikeUserToShelter(int user, int pet) async {
+  final url = Uri.parse('$baseUrl/like?user=$user&pet=$pet');
 
   final response = await http.put(
     url,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: jsonEncode({
-      'userId': userId,
-      'petId': petId,
-    }),
   );
 
   if (response.statusCode == 200) {
@@ -253,5 +264,71 @@ Future<void> sendLike(int userId, int petId) async {
     print('fallo al guardar like: ${response.statusCode}');
     print('Error: ${response.body}');
     throw Exception('Fallo al guardar like: ${response.body}');
+  }
+}
+Future<void> sendLikeShelterToUser(int petId, int userId) async {
+  final url = Uri.parse('$baseUrlOrg/like?user=$userId&pet=$petId');
+
+  final response = await http.put(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    print('like guardado en shelter');
+  } else {
+    print('fallo al guardar like: ${response.statusCode}');
+    print('Error: ${response.body}');
+    throw Exception('Fallo al guardar like: ${response.body}');
+  }
+}
+
+Future<void> sendMessage(String userName, String shelterName, String messageText) async {
+  final url = Uri.parse('$baseUrl/text?user=$userName&shelter=$shelterName');
+
+  final messageData = {
+    'text': messageText,
+  };
+
+  final response = await http.put(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(messageData),
+  );
+
+  if (response.statusCode == 200) {
+    print('Mensaje enviado');
+  } else {
+    print('Fallo al enviar mensaje: ${response.statusCode}');
+    print('Error: ${response.body}');
+    throw Exception('Fallo al enviar mensaje: ${response.body}');
+  }
+}
+
+Future<void> sendMessageShelter(String userName, String shelterName, String messageText) async {
+  final url = Uri.parse('$baseUrlOrg/text?shelter=$shelterName&user=$userName');
+
+  final messageData = {
+    'text': messageText,
+  };
+
+  final response = await http.put(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(messageData),
+  );
+
+  if (response.statusCode == 200) {
+    print('Mensaje enviado');
+  } else {
+    print('Fallo al enviar mensaje: ${response.statusCode}');
+    print('Error: ${response.body}');
+    throw Exception('Fallo al enviar mensaje: ${response.body}');
   }
 }

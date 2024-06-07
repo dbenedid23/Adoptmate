@@ -1,23 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'models/user.dart';
+import 'models/shelter.dart';
 import 'chat.dart';
 import 'perfil.dart';
 import 'user_principal.dart';
+import 'models/api_service.dart';
 
-class LikePage extends StatelessWidget {
-  
+class LikePage extends StatefulWidget {
+  @override
+  _LikePageState createState() => _LikePageState();
+}
+
+class _LikePageState extends State<LikePage> {
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    User? user = await loadUserFromPrefs();
+    if (user != null) {
+      setState(() {
+        _currentUser = user;
+      });
+      print('Usuario cargado: ${user.name}');
+    } else {
+      print('No se pudo cargar el usuario');
+    }
+  }
+
+  Widget _buildMatchedSheltersList(List<dynamic> matchedShelters) {
+    Set<String> shelterNames = {}; // Para rastrear nombres únicos
+    List<Widget> shelterWidgets = [];
+
+    for (var shelterData in matchedShelters) {
+      final Map<String, dynamic> shelter = shelterData as Map<String, dynamic>;
+      final String name = shelter['name'] ?? 'No especificado';
+      if (!shelterNames.contains(name)) {
+        shelterNames.add(name);
+        shelterWidgets.add(
+          Card(
+            margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: ListTile(
+              title: Text(
+                name,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Teléfono: ${shelter['phone'] ?? 'No especificado'}'),
+                  Text('Ubicación: ${shelter['location'] ?? 'No especificado'}'),
+                  Text('Descripción: ${shelter['description'] ?? 'No especificado'}'),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    
+    return Column(children: shelterWidgets);
+  }
+
   @override
   Widget build(BuildContext context) {
-    /*
-    List<UserProfile> likedProfiles = [
-      UserProfile('Dani', 'Simplemente, carlino.', ['assets/images/pug.jpeg']),
-      UserProfile(
-          'Isma',
-          'Perfil para Isma, a tope con los gatetes si no le pongo esto nos suspende asi que bueno... simplemente estoy haciendo essto para que ocupe mas, pues eso',
-          ['assets/images/gato1.jpg']),
-      UserProfile('Mario', 'No sabia que poner asi que agaporni, disfrutalo',
-          ['assets/images/aga.jpg']),
-    ];
-*/
     return Scaffold(
       appBar: AppBar(
         foregroundColor: Colors.white,
@@ -41,60 +93,24 @@ class LikePage extends StatelessWidget {
         ),
         title: Text('Likes'),
       ),
-      /*
-      body: ListView.builder(
-        itemCount: likedProfiles.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      content: Image.asset(
-                        likedProfiles[index].images[0],
-                        fit: BoxFit.contain,
-                      ),
-                    );
-                  },
-                );
-              },
-              child: CircleAvatar(
-                backgroundImage: AssetImage(likedProfiles[index].images[0]),
-              ),
-            ),
-            title: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(likedProfiles[index].name),
-                      content: Text(likedProfiles[index].description),
-                    );
-                  },
-                );
-              },
-              child: Text(likedProfiles[index].name),
-            ),
-            trailing: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                /         ChatScreen(profile: likedProfiles[index])),
-                );
-              },
-              child: Icon(Icons.send),
-            ),
-          );
-          
-        },
-        
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _currentUser != null
+              ? [
+                  _buildMatchedSheltersList(_currentUser!.matchedShelters),
+                ]
+              : [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'No se pudo cargar el usuario',
+                      style: TextStyle(fontSize: 18, color: Colors.red),
+                    ),
+                  ),
+                ],
+        ),
       ),
-      */
       bottomNavigationBar: BottomAppBar(
         child: Container(
           color: Colors.black,

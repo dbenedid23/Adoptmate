@@ -6,6 +6,7 @@ import 'perfil.dart';
 import 'models/api_service.dart';
 import 'models/pet.dart';
 import 'dart:typed_data';
+import 'models/user.dart';
 
 class UserPrincipal extends StatelessWidget {
   @override
@@ -33,7 +34,7 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
   @override
   void initState() {
     super.initState();
-    matchEngine = MatchEngine(swipeItems: swipeItems); 
+    matchEngine = MatchEngine(swipeItems: swipeItems);
     _loadInitialPets();
   }
 
@@ -42,7 +43,7 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
       await _fetchRandomPet();
     }
     setState(() {
-      matchEngine = MatchEngine(swipeItems: swipeItems); 
+      matchEngine = MatchEngine(swipeItems: swipeItems);
     });
   }
 
@@ -57,6 +58,8 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
               _fetchRandomPet();
               print("like");
               _showSnackBar(context, 'LIKE', pet.name, Colors.green);
+              print("like desde un user a una petops");
+              _sendLike(pet.id!); 
             },
             nopeAction: () {
               _fetchRandomPet();
@@ -66,6 +69,14 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
           ),
         );
       });
+    }
+  }
+
+  Future<void> _sendLike(int petId) async {
+
+    User? currentUser = await loadUserFromPrefs();
+    if (currentUser != null) {
+      await sendLikeUserToShelter(currentUser.id!, petId);
     }
   }
 
@@ -106,12 +117,46 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
         return AlertDialog(
           title: Text(pet.name),
           content: SingleChildScrollView(
-            child: Text(
-              pet.description,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 8),
+                Text(
+                  'Edad: ${pet.age}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  'Sexo: ${pet.sex}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  'Raza: ${pet.breedName}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  'Descripción: ${pet.description}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  'Refugio: ${pet.shelterName}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
           ),
           actions: <Widget>[
@@ -233,8 +278,7 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color.fromARGB(255, 56, 56, 56)
-                                    .withOpacity(0.5),
+                                color: const Color.fromARGB(255, 56, 56, 56).withOpacity(0.5),
                                 spreadRadius: 2,
                                 blurRadius: 3,
                                 offset: Offset(0, 2),
@@ -273,12 +317,45 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
                                     maxWidth: MediaQuery.of(context).size.width - 32,
                                   ),
                                   child: SingleChildScrollView(
-                                    child: Text(
-                                      pet.description,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.white,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Edad: ${pet.age}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Sexo: ${pet.sex}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Raza: ${pet.breedName}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Descripción: ${pet.description}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Refugio: ${pet.shelterName}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -291,11 +368,7 @@ class _UserPrincipalPageState extends State<UserPrincipalPage> {
                 );
               },
               onStackFinished: () {
-                // Cuando la pila de tarjetas se vacía, se recargan más tarjetas
                 _loadInitialPets();
-              },
-              itemChanged: (SwipeItem item, int index) {
-                // Lógica cuando cambia el elemento
               },
               upSwipeAllowed: false,
               fillSpace: true,

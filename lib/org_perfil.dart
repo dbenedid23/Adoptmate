@@ -91,7 +91,7 @@ class _OrgPerfilPageState extends State<OrgPerfilPage> {
   Future<void> _navigateAndRefresh(BuildContext context) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => OrgRegisterMatePage()),
+      MaterialPageRoute(builder: (context) => OrgRegisterMatePage(shelterName: _currentShelter!.name)),
     );
     _loadShelterData(); // Recarga los datos después de regresar de la página de registro de mascota
   }
