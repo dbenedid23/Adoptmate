@@ -1,6 +1,7 @@
 # adopmate
 
-A new Flutter project.
+App realizada con Flutter y Dart.
+Proyecto final de grado
 
 ## Getting Started
 
